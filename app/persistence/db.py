@@ -128,7 +128,7 @@ def query_collection(
     )
 
     matches = [
-        _parse_match(doc, raw)
+        _parse_match(doc, meta)
         for doc, meta in zip(raw["documents"][0], raw["metadatas"][0])
     ]
 
