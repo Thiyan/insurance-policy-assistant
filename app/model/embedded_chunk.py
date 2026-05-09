@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.config.config import EMBEDDING_DIMS
+from app.config.config import APP_CONFIG
 from app.model.chunk import Chunk
 
 
@@ -10,7 +10,7 @@ class EmbeddedChunk:
     embedding: list[float]
 
     def __post_init__(self) -> None:
-        if len(self.embedding) != EMBEDDING_DIMS:
+        if len(self.embedding) != APP_CONFIG.EMBEDDING_DIMS:
             raise ValueError(
-                f"Expected {EMBEDDING_DIMS}-dim embedding, got {len(self.embedding)}"
+                f"Expected {APP_CONFIG.EMBEDDING_DIMS}-dim embedding, got {len(self.embedding)}"
             )

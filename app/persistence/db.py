@@ -4,7 +4,7 @@ from pathlib import Path
 import chromadb
 from langchain_openai import OpenAIEmbeddings
 
-from app.config.config import EMBEDDING_MODEL, HNSW_SPACE, N_RESULTS
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.ingestion_exception import EmbeddingException
 from app.exception.sub_exception.persistence_exception import DatabaseWriteException, DatabaseReadException, \
     RecordNotFoundException, DatabaseConnectionException, RecordConflictException
@@ -53,7 +53,7 @@ def store_in_chromadb(
     try:
         collection = client.create_collection(
             name=collection_name,
-            metadata={"hnsw:space": HNSW_SPACE},
+            metadata={"hnsw:space": APP_CONFIG.HNSW_SPACE},
         )
         collection.add(
             ids=[ec.chunk.id for ec in embedded_chunks],
@@ -84,8 +84,8 @@ def store_in_chromadb(
 def query_collection(
     collection: chromadb.Collection,
     question: str,
-    n_results: int = N_RESULTS,
-    model: str = EMBEDDING_MODEL,
+    n_results: int = APP_CONFIG.N_RESULTS,
+    model: str = APP_CONFIG.EMBEDDING_MODEL,
 ) -> QueryResult:
     """Query a ChromaDB collection using semantic similarity.
 

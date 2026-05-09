@@ -1,7 +1,7 @@
 import logging
 import time
 
-from app.config.config import COLLECTION_NAME, DB_PATH
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.ingestion_exception import DocumentParseException, ChunkingException, \
     IngestionException, FileNotFoundException, UnsupportedFileTypeException, EmbeddingException
 from app.exception.sub_exception.persistence_exception import PersistenceException
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def execute_ingestion_pipeline(
     pdf_path: str,
-    db_path: str = DB_PATH,
-    collection_name: str = COLLECTION_NAME,
+    db_path: str = APP_CONFIG.DB_PATH,
+    collection_name: str = APP_CONFIG.COLLECTION_NAME,
 ) -> IngestionResult:
     """Run the full PDF ingestion pipeline: extract → chunk → embed → store.
 

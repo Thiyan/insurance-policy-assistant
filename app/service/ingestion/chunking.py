@@ -2,7 +2,7 @@ import logging
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.config.config import CHUNK_OVERLAP, CHUNK_SIZE
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.ingestion_exception import ChunkingException
 from app.model.chunk import Chunk
 from app.model.doc_metadata import DocMetadata
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 def chunk_pages(
     pages: list[PageContent],
     doc_metadata: DocMetadata,
-    chunk_size: int = CHUNK_SIZE,
-    chunk_overlap: int = CHUNK_OVERLAP,
+    chunk_size: int = APP_CONFIG.CHUNK_SIZE,
+    chunk_overlap: int = APP_CONFIG.CHUNK_OVERLAP,
 ) -> list[Chunk]:
     """Split pages into overlapping text chunks enriched with metadata.
 

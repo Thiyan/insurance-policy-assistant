@@ -3,7 +3,7 @@ import logging
 from langchain_openai import OpenAIEmbeddings
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, BadRequestError, RateLimitError
 
-from app.config.config import EMBED_BATCH_SIZE, EMBEDDING_MODEL
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.ingestion_exception import EmbeddingException
 from app.model.chunk import Chunk
 from app.model.embedded_chunk import EmbeddedChunk
@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 def embed_chunks(
     chunks: list[Chunk],
-    model: str = EMBEDDING_MODEL,
-    batch_size: int = EMBED_BATCH_SIZE,
+    model: str = APP_CONFIG.EMBEDDING_MODEL,
+    batch_size: int = APP_CONFIG.EMBED_BATCH_SIZE,
 ) -> list[EmbeddedChunk]:
     """Embed chunks using OpenAI's text embedding model.
 

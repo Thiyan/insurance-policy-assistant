@@ -5,7 +5,7 @@ from pathlib import Path
 import fitz
 import pymupdf4llm
 
-from app.config.config import SUPPORTED_EXTENSION
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.ingestion_exception import DocumentParseException, FileNotFoundException, \
     UnsupportedFileTypeException
 from app.model.doc_metadata import DocMetadata
@@ -117,10 +117,10 @@ def _validate_pdf_path(pdf_path: str) -> Path:
     if not path.exists():
         raise FileNotFoundException(file_path=str(path))
 
-    if path.suffix.lower() != SUPPORTED_EXTENSION:
+    if path.suffix.lower() != APP_CONFIG.SUPPORTED_EXTENSION:
         raise UnsupportedFileTypeException(
             file_type=path.suffix or "<no extension>",
-            supported=[SUPPORTED_EXTENSION],
+            supported=[APP_CONFIG.SUPPORTED_EXTENSION],
         )
 
     return path

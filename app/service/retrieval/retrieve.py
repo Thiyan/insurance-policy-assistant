@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
 
-from app.config.config import LLM_MODEL, N_RESULTS, SYSTEM_PROMPT, TEMPERATURE
+from app.config.config import APP_CONFIG
 from app.exception.sub_exception.retrieval_exception import VectorSearchException, EmptyRetrievalResultException, \
     LLMException
 from app.model.query_match import QueryMatch
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def retrieve(
     collection: chromadb.Collection,
     question: str,
-    n_results: int = N_RESULTS,
+    n_results: int = APP_CONFIG.N_RESULTS,
 ) -> QueryResult:
     """Embed a question and retrieve the top-n matching chunks from ChromaDB.
 
@@ -59,7 +59,7 @@ def retrieve(
 def generate_answer(
     question: str,
     retrieval: QueryResult,
-    model: str = LLM_MODEL,
+    model: str = APP_CONFIG.LLM_MODEL,
 ) -> str:
     """Generate a grounded answer from retrieved context using an LLM.
 
@@ -75,9 +75,9 @@ def generate_answer(
         LLMException: LLM call fails for any reason.
     """
     context = _build_context(retrieval.matches)
-    llm = ChatOpenAI(model=model, temperature=TEMPERATURE)
+    llm = ChatOpenAI(model=model, temperature=APP_CONFIG.TEMPERATURE)
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=APP_CONFIG.SYSTEM_PROMPT),
         HumanMessage(content=f"Context:\n{context}\n\nQuestion: {question}"),
     ]
 
@@ -101,7 +101,7 @@ def generate_answer(
 def rag_query(
     collection: chromadb.Collection,
     question: str,
-    n_results: int = N_RESULTS,
+    n_results: int = APP_CONFIG.N_RESULTS,
 ) -> RAGResponse:
     """Run a full retrieval-augmented generation query.
 
