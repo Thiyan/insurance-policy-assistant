@@ -15,7 +15,7 @@ from app.model.api_model import QueryResponse, QueryRequest, MatchedChunk
 from app.observation.logging_setup import setup_logging
 from app.persistence.db import load_collection
 from app.service.ingestion.ingestion_orchestration import execute_ingestion_pipeline
-from app.service.retrieval.retrieve import rag_query
+from app.service.retrieval.retrieval_orchestration import rag_query
 
 load_dotenv()
 setup_logging()
