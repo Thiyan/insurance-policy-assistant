@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from app.config.config import APP_CONFIG
 from app.exception.policy_application_exception import PolicyApplicationException
+from app.model.api_model import QueryResponse, QueryRequest, MatchedChunk
 from app.observation.logging_setup import setup_logging
 from app.persistence.db import load_collection
 from app.service.ingestion.ingestion_orchestration import execute_ingestion_pipeline
@@ -89,25 +89,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"error_code": "INTERNAL_ERROR", "detail": "An unexpected error occurred"},
     )
-
-
-# ── Schemas ───────────────────────────────────────────────────────────────────
-
-class QueryRequest(BaseModel):
-    question: str
-
-
-class MatchedChunk(BaseModel):
-    text: str
-    page_number: int
-    source: str
-
-
-class QueryResponse(BaseModel):
-    question: str
-    answer: str
-    page_numbers: list[int]
-    matched_chunks: list[MatchedChunk]
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
