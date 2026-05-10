@@ -221,3 +221,7 @@ __marimo__/
 .idea/
 
 .DS_Store
+
+# ChromaDB
+chroma_db/
+*.chroma
