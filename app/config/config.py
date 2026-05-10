@@ -53,6 +53,7 @@ class AppConfig:
         "'I don't have enough information to answer that.' "
         "Always mention the page number(s) your answer is based on."
     )
+    RUN_INGESTION: bool = os.getenv("RUN_INGESTION", "true").lower() == "true"
 
 
 @dataclass(frozen=True)
