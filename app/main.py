@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.config.config import APP_CONFIG
+from app.exception.error_codes import ErrorCode
 from app.exception.policy_application_exception import PolicyApplicationException
 from app.model.api_model import QueryResponse, QueryRequest, MatchedChunk
 from app.observation.logging_setup import setup_logging
@@ -25,25 +27,48 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.getenv("OPENAI_API_KEY"):
-        raise EnvironmentError("OPENAI_API_KEY is not set.")
+    # ── Startup ───────────────────────────────────────────────────────────────
+    try:
+        if not os.getenv("OPENAI_API_KEY"):
+            raise EnvironmentError("OPENAI_API_KEY is not set.")
 
-    if APP_CONFIG.RUN_INGESTION:
-        logger.info("RUN_INGESTION=true — running ingestion pipeline")
-        execute_ingestion_pipeline(
-            APP_CONFIG.PDF_PATH,
-            APP_CONFIG.DB_PATH,
-            APP_CONFIG.COLLECTION_NAME,
+        if APP_CONFIG.RUN_INGESTION:
+            logger.info("RUN_INGESTION=true — running ingestion pipeline")
+            execute_ingestion_pipeline(
+                APP_CONFIG.PDF_PATH,
+                APP_CONFIG.DB_PATH,
+                APP_CONFIG.COLLECTION_NAME,
+            )
+        else:
+            logger.info("RUN_INGESTION=false — skipping ingestion, loading existing collection")
+
+        app.state.collection = load_collection(APP_CONFIG.DB_PATH, APP_CONFIG.COLLECTION_NAME)
+        logger.info("Collection loaded and ready for queries")
+
+
+    except EnvironmentError as exc:
+        raise PolicyApplicationException(
+            error_message=f"Missing environment variable — cannot start: {exc}",
+            context={"step": "environment_check"},
+        ) from exc
+
+    except PolicyApplicationException as exc:
+        logger.critical(
+            "Startup failed | step=%s | code=%s | message=%s",
+            exc.error_code, exc.error_message,
         )
-    else:
-        logger.info("RUN_INGESTION=false — skipping ingestion, loading existing collection")
+        raise
 
-    app.state.collection = load_collection(APP_CONFIG.DB_PATH, APP_CONFIG.COLLECTION_NAME)
-    logger.info("Collection loaded and ready for queries")
+    except Exception as exc:
+        raise PolicyApplicationException(
+            error_message=f"Unexpected error during startup: {exc}"
+        ) from exc
 
     yield
 
+    # ── Shutdown ──────────────────────────────────────────────────────────────
     logger.info("Application shutting down")
+    os.kill(os.getpid(), signal.SIGTERM)
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -95,7 +120,21 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    try:
+        collection = app.state.collection
+        if collection is None:
+            raise PolicyApplicationException(
+                error_code=ErrorCode.SERVICE_UNAVAILABLE,
+                error_message="Vector collection is not loaded.",
+            )
+        return {"status": "ok"}
+    except PolicyApplicationException:
+        raise
+    except Exception as exc:
+        raise PolicyApplicationException(
+            error_code=ErrorCode.HEALTH_CHECK_FAILED,
+            error_message="Health check encountered an unexpected error.",
+        ) from exc
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -110,21 +149,42 @@ def query(request: QueryRequest, http_request: Request):
     """
     logger.info("Query received: %r", request.question)
 
-    response = rag_query(
-        collection=http_request.app.state.collection,
-        question=request.question,
-    )
+    collection = http_request.app.state.collection
+    if collection is None:
+        raise PolicyApplicationException(
+            error_code=ErrorCode.SERVICE_UNAVAILABLE,
+            error_message="Vector collection is not ready. Try again shortly.",
+        )
 
-    return QueryResponse(
-        question=response.question,
-        answer=response.answer,
-        page_numbers=sorted({m.page_number for m in response.retrieval.matches}),
-        matched_chunks=[
-            MatchedChunk(
-                text=m.text,
-                page_number=m.page_number,
-                source=m.source,
-            )
-            for m in response.retrieval.matches
-        ],
-    )
+    try:
+        response = rag_query(
+            collection=collection,
+            question=request.question,
+        )
+    except PolicyApplicationException:
+        raise
+    except Exception as exc:
+        raise PolicyApplicationException(
+            error_code=ErrorCode.RETRIEVAL_QUERY_FAILED,
+            error_message="Failed to process the query against the policy collection.",
+        ) from exc
+
+    try:
+        return QueryResponse(
+            question=response.question,
+            answer=response.answer,
+            page_numbers=sorted({m.page_number for m in response.retrieval.matches}),
+            matched_chunks=[
+                MatchedChunk(
+                    text=m.text,
+                    page_number=m.page_number,
+                    source=m.source,
+                )
+                for m in response.retrieval.matches
+            ],
+        )
+    except Exception as exc:
+        raise PolicyApplicationException(
+            error_code=ErrorCode.RESPONSE_BUILD_FAILED,
+            error_message="Query succeeded but the response could not be assembled.",
+        ) from exc
