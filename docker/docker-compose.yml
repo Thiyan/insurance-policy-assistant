@@ -1,0 +1,28 @@
+services:
+  insurance-policy-assistance:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+
+    image: insurance-policy-assistance:latest
+    container_name: insurance-policy-assistance
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env-docker
+
+    volumes:
+      - ../docker-run/resources:/app/resources
+      - ../docker-run/data:/app/data
+      - ../docker-run/logs:/app/logs
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
