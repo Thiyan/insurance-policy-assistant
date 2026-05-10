@@ -126,6 +126,7 @@ def health_check():
             raise PolicyApplicationException(
                 error_code=ErrorCode.SERVICE_UNAVAILABLE,
                 error_message="Vector collection is not loaded.",
+                http_status=503
             )
         return {"status": "ok"}
     except PolicyApplicationException:
@@ -134,6 +135,7 @@ def health_check():
         raise PolicyApplicationException(
             error_code=ErrorCode.HEALTH_CHECK_FAILED,
             error_message="Health check encountered an unexpected error.",
+            http_status=500
         ) from exc
 
 
@@ -154,6 +156,7 @@ def query(request: QueryRequest, http_request: Request):
         raise PolicyApplicationException(
             error_code=ErrorCode.SERVICE_UNAVAILABLE,
             error_message="Vector collection is not ready. Try again shortly.",
+            http_status=503
         )
 
     try:
@@ -167,6 +170,7 @@ def query(request: QueryRequest, http_request: Request):
         raise PolicyApplicationException(
             error_code=ErrorCode.RETRIEVAL_QUERY_FAILED,
             error_message="Failed to process the query against the policy collection.",
+            http_status=400
         ) from exc
 
     try:
@@ -187,4 +191,5 @@ def query(request: QueryRequest, http_request: Request):
         raise PolicyApplicationException(
             error_code=ErrorCode.RESPONSE_BUILD_FAILED,
             error_message="Query succeeded but the response could not be assembled.",
+            http_status=500
         ) from exc

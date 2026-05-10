@@ -32,9 +32,11 @@ class PolicyApplicationException(Exception):
             error_details=sys,
             error_code: ErrorCode = None,
             context: dict = None,
+            http_status: int = HTTPStatus.INTERNAL_SERVER_ERROR,
     ):
         super().__init__(str(error_message))
 
+        self.http_status = http_status
         _, _, exc_tb = error_details.exc_info()
 
         self.error_message = str(error_message)
