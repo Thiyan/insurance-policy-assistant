@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, RateLimitError
 
 from app.config.config import APP_CONFIG
+from app.config.constants import SYSTEM_PROMPT
 from app.exception.sub_exception.retrieval_exception import VectorSearchException, EmptyRetrievalResultException, \
     LLMException
 from app.model.query_match import QueryMatch
@@ -77,7 +78,7 @@ def generate_answer(
     context = _build_context(retrieval.matches)
     llm = ChatOpenAI(model=model, temperature=APP_CONFIG.TEMPERATURE)
     messages = [
-        SystemMessage(content=APP_CONFIG.SYSTEM_PROMPT),
+        SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=f"Context:\n{context}\n\nQuestion: {question}"),
     ]
 

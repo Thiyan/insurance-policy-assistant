@@ -47,12 +47,6 @@ class AppConfig:
 
     SUPPORTED_EXTENSION: str = ".pdf"
 
-    SYSTEM_PROMPT: str = (
-        "You are a helpful assistant. Answer the user's question using ONLY "
-        "the provided context. If the answer is not in the context, say "
-        "'I don't have enough information to answer that.' "
-        "Always mention the page number(s) your answer is based on."
-    )
     RUN_INGESTION: bool = os.getenv("RUN_INGESTION", "true").lower() == "true"
 
 
