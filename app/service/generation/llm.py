@@ -9,8 +9,10 @@ from app.config.constants import SYSTEM_PROMPT
 from app.exception.sub_exception.retrieval_exception import LLMException
 from app.model.query_match import QueryMatch
 from app.model.query_result import QueryResult
+from app.service.generation.guardrail import check_input, check_output, check_context
 
 logger = logging.getLogger(__name__)
+
 
 def generate_answer(
     question: str,
@@ -28,9 +30,27 @@ def generate_answer(
         The LLM's answer string.
 
     Raises:
-        LLMException: LLM call fails for any reason.
+        GuardrailViolation: An input or output policy was violated.
+        LLMException:       The LLM call failed for a technical reason.
     """
-    context = _build_context(retrieval.matches)
+    check_input(question)
+
+    safe_matches = check_context(retrieval.matches)
+    context = _build_context(safe_matches)
+
+    answer = _call_llm(question, context, model)
+
+    check_output(answer, safe_matches)
+
+    logger.debug("Answer generated using model '%s'", model)
+    return answer
+
+
+
+# ── LLM call ─────────────────────────────────────────────────────────────────
+
+def _call_llm(question: str, context: str, model: str) -> str:
+    """Invoke the LLM and map provider errors to LLMException."""
     llm = ChatOpenAI(model=model, temperature=APP_CONFIG.TEMPERATURE)
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -50,10 +70,10 @@ def generate_answer(
     except Exception as exc:
         raise LLMException(model=model, reason=f"Unexpected error during generation: {exc}") from exc
 
-    logger.debug("Answer generated using model '%s'", model)
     return response.content
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+
+# ── Context builder ───────────────────────────────────────────────────────────
 
 def _build_context(matches: list[QueryMatch]) -> str:
     """Format retrieved chunks into a numbered context block for the LLM."""

@@ -85,5 +85,21 @@ class LogConfig:
         ).lower() == "true"
     )
 
+
+@dataclass(frozen=True)
+class GuardrailConfig:
+    # Input
+    MAX_QUESTION_CHARS: int = int(os.getenv("MAX_QUESTION_CHARS", 1_000))
+    MIN_QUESTION_CHARS: int = int(os.getenv("MIN_QUESTION_CHARS", 3))
+
+    # Context
+    MAX_CONTEXT_CHARS: int = int(os.getenv("MAX_CONTEXT_CHARS", 12_000))
+    MIN_MATCHES_REQUIRED: int = int(os.getenv("MIN_MATCHES_REQUIRED", 1))
+
+    # Output
+    MAX_ANSWER_CHARS: int = int(os.getenv("MAX_ANSWER_CHARS", 4_000))
+
+
 APP_CONFIG = AppConfig()
 DEFAULT_LOG_CONFIG = LogConfig()
+DEFAULT_GUARDRAIL_CONFIG = GuardrailConfig()

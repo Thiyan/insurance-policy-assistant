@@ -1,3 +1,5 @@
+import re
+
 METADATA_KEY_TITLE = "title"
 METADATA_KEY_AUTHOR = "author"
 METADATA_KEY_SUBJECT = "subject"
@@ -65,3 +67,22 @@ Output Format:
 - Important conditions or exclusions (if applicable)
 - Source citations
 """
+
+# Basic prompt-injection patterns (extend as needed)
+INJECTION_PATTERNS = re.compile(
+    r"(ignore (all |previous |prior )?(instructions?|prompts?|rules?)"
+    r"|forget (everything|all|what)"
+    r"|you are now"
+    r"|disregard (the )?(above|previous|prior|system)"
+    r"|new (role|persona|instructions?))",
+    re.IGNORECASE,
+)
+
+LLM_REFUSAL_PHRASES = (
+    "i cannot",
+    "i can't",
+    "i'm unable",
+    "i am unable",
+    "as an ai",
+    "as a language model",
+)
